@@ -1,7 +1,7 @@
 # SelfHostLinks
 
-A simple, self-hosted alternative to Linktree.  
-Create and manage your own personalized link page — securely and privately.
+A simple, self-hosted link aggregation page.  
+Easily create and manage your own list of links with a clean interface.
 
 ![Screenshot of SelfHostLinks homepage](static/screenshot-home.png)
 
@@ -43,10 +43,10 @@ Then go to `http://localhost` (or your server IP) to access your site.
 ## 🔐 .env Configuration
 
 ```env
-SECRET_KEY=your_random_secret_key
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD_HASH=scrypt:...  # use the generator below
-APP_NAME=SelfHostLinks
+APP_NAME=your_app_name_here
+SECRET_KEY=your_secret_key_here
+ADMIN_USERNAME=your_admin_username
+ADMIN_PASSWORD_HASH=your_password_hash_here
 ```
 
 📌 **Note:** escape `$` with `$$` in the password hash if using `.env` with Docker Compose!
@@ -83,4 +83,4 @@ ADMIN_PASSWORD_HASH=scrypt:...   # escape $ as $$
 
 ## 📜 License
 
-MIT © 2025 - YourNameHere
+MIT © 2025 - Peppinosh
