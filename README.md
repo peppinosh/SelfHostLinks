@@ -1,5 +1,9 @@
 # SelfHostLinks
 
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Issues](https://img.shields.io/github/issues/peppinosh/SelfHostLinks)](https://github.com/peppinosh/SelfHostLinks/issues)
+[![Stars](https://img.shields.io/github/stars/peppinosh/SelfHostLinks?style=social)](https://github.com/peppinosh/SelfHostLinks/stargazers)
+
 A simple, self-hosted link aggregation page.  
 Easily create and manage your own list of links with a clean interface.
 
