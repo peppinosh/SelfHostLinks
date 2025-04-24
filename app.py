@@ -1,3 +1,4 @@
+
 import os
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, session
@@ -6,43 +7,49 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 
+# Flask-Limiter setup with in-memory storage (safe for dev, not prod)
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["200 per day", "50 per hour"]
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
 )
 
+# Environment variables
 APP_NAME = os.environ.get("APP_NAME", "SelfHostLinks")
-# Prendo la SECRET_KEY dall'ambiente, con fallback per debug
 SECRET_KEY = os.environ.get("SECRET_KEY")
-
-# Prendo USERNAME e PASSWORD_HASH dall'ambiente (poi sovrascritti sotto per debug)
 USERNAME = os.environ.get("ADMIN_USERNAME")
 PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH")
 
-# Controlli di sicurezza base
-if not SECRET_KEY:
-    raise Exception("SECRET_KEY non impostata! Imposta la variabile di ambiente SECRET_KEY.")
-if not USERNAME or not PASSWORD_HASH:
-    raise Exception("ADMIN_USERNAME o ADMIN_PASSWORD_HASH non impostati! Imposta le variabili di ambiente.")
+#GENERA AHSH PASSWORD
+
+if not SECRET_KEY or not USERNAME or not PASSWORD_HASH:
+    raise Exception("Missing one or more required environment variables: SECRET_KEY, ADMIN_USERNAME, ADMIN_PASSWORD_HASH")
 
 app.secret_key = SECRET_KEY
 
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=30)  # Timeout inattività
-app.config["SESSION_COOKIE_HTTPONLY"] = True  # Cookie accessibile solo via HTTP
-app.config["SESSION_COOKIE_SECURE"] = False  # In locale, non hai HTTPS
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"  # Protezione CSRF base
-# --- INIZIALIZZAZIONE DATABASE AUTOMATICA ---
+# Session config
+app.config.update(
+    PERMANENT_SESSION_LIFETIME=timedelta(minutes=30),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=False,
+    SESSION_COOKIE_SAMESITE="Lax"
+)
+
+# Initialize database if not exists
 def init_db():
-    if not os.path.exists('database.db'):
-        print("Database non trovato! Creazione in corso...")
-        conn = sqlite3.connect('database.db')
+    if not os.path.exists("database.db"):
+        print("Creating database...")
+        conn = sqlite3.connect("database.db")
         c = conn.cursor()
-        c.execute('''
+        c.execute("""
             CREATE TABLE IF NOT EXISTS links (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
@@ -50,26 +57,27 @@ def init_db():
                 color TEXT NOT NULL,
                 icon TEXT
             )
-        ''')
+        """)
         conn.commit()
         conn.close()
-        print("Database creato correttamente.")
+        print("Database created.")
     else:
-        print("Database già esistente. Nessuna creazione necessaria.")
+        print("Database already exists.")
 
-# Chiamata alla funzione prima di avviare l'app
 init_db()
 
-# --- ROUTES ---
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route("/")
 def home():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect("database.db")
     c = conn.cursor()
-    c.execute('SELECT id, title, url, color, icon FROM links')
+    c.execute("SELECT id, title, url, color, icon FROM links")
     links = c.fetchall()
     conn.close()
-
     return render_template("public.html", links=links, app_name=APP_NAME)
 
 @app.route("/edit/<int:link_id>", methods=["POST"])
@@ -81,13 +89,13 @@ def edit_link(link_id):
     url_link = request.form["url"]
     color = request.form["color"]
 
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect("database.db")
     c = conn.cursor()
-    c.execute('UPDATE links SET title = ?, url = ?, color = ? WHERE id = ?', (title, url_link, color, link_id))
+    c.execute("UPDATE links SET title = ?, url = ?, color = ? WHERE id = ?", (title, url_link, color, link_id))
     conn.commit()
     conn.close()
 
-    return redirect(url_for('admin'))
+    return redirect(url_for("admin"))
 
 @limiter.limit("5 per 5 minutes")
 @app.route("/login", methods=["GET", "POST"])
@@ -100,22 +108,15 @@ def login():
             session["user"] = username
             return redirect(url_for("admin"))
         else:
-             return render_template("login.html", error="Invalid credentials", app_name=APP_NAME)
+            return render_template("login.html", error="Invalid credentials", app_name=APP_NAME)
     return render_template("login.html", app_name=APP_NAME)
-
-# Estensioni consentite per upload icone
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-
-# Funzione per controllare estensione file
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
     if "user" not in session:
         return redirect(url_for("login"))
 
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
     if request.method == "POST":
@@ -124,38 +125,30 @@ def admin():
         color = request.form["color"]
 
         icon_filename = None
-        if 'icon_file' in request.files:
-            icon_file = request.files['icon_file']
-            if icon_file and icon_file.filename != '':
-                if allowed_file(icon_file.filename):
-                    # Controlliamo anche il tipo MIME (sicurezza in più)
-                    if icon_file.mimetype.startswith('image/'):
-                        icon_filename = secure_filename(icon_file.filename)
-                        icon_path = os.path.join('static/icons', icon_filename)
+        if "icon_file" in request.files:
+            icon_file = request.files["icon_file"]
+            if icon_file and icon_file.filename != "":
+                if allowed_file(icon_file.filename) and icon_file.mimetype.startswith("image/"):
+                    icon_filename = secure_filename(icon_file.filename)
+                    icon_path = os.path.join("static/icons", icon_filename)
 
-                        # Limite dimensione file: esempio max 2MB
-                        icon_file.seek(0, os.SEEK_END)  # Vai alla fine del file
-                        file_size = icon_file.tell()    # Ottieni la dimensione
-                        icon_file.seek(0)               # Torna all'inizio per salvare
+                    icon_file.seek(0, os.SEEK_END)
+                    file_size = icon_file.tell()
+                    icon_file.seek(0)
 
-                        if file_size <= 2 * 1024 * 1024:  # 2MB
-                            icon_file.save(icon_path)
-                        else:
-                            return "File troppo grande! Massimo 2MB.", 400
+                    if file_size <= 2 * 1024 * 1024:
+                        icon_file.save(icon_path)
                     else:
-                        return "Il file caricato non è un'immagine valida!", 400
+                        return "File too large! Max 2MB.", 400
                 else:
-                    return "Tipo di file non consentito (solo png, jpg, jpeg, gif)!", 400
+                    return "Invalid file type. Only images are allowed.", 400
 
-        # Inserimento nel database
-        c.execute('INSERT INTO links (title, url, color, icon) VALUES (?, ?, ?, ?)', (title, url_link, color, icon_filename))
+        c.execute("INSERT INTO links (title, url, color, icon) VALUES (?, ?, ?, ?)", (title, url_link, color, icon_filename))
         conn.commit()
 
-    # Carica tutti i link da mostrare
-    c.execute('SELECT id, title, url, color, icon FROM links')
+    c.execute("SELECT id, title, url, color, icon FROM links")
     links = c.fetchall()
     conn.close()
-
     return render_template("admin.html", links=links, app_name=APP_NAME)
 
 @app.route("/delete/<int:link_id>", methods=["POST"])
@@ -163,26 +156,24 @@ def delete_link(link_id):
     if "user" not in session:
         return redirect(url_for("login"))
 
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    # Prendi prima l'icona associata (se esiste)
-    c.execute('SELECT icon FROM links WHERE id = ?', (link_id,))
+    c.execute("SELECT icon FROM links WHERE id = ?", (link_id,))
     result = c.fetchone()
 
     if result:
         icon_filename = result[0]
         if icon_filename:
-            icon_path = os.path.join('static/icons', icon_filename)
+            icon_path = os.path.join("static/icons", icon_filename)
             if os.path.exists(icon_path):
-                os.remove(icon_path)  # Cancella il file icona
+                os.remove(icon_path)
 
-        # Ora elimina il record dal database
-        c.execute('DELETE FROM links WHERE id = ?', (link_id,))
+        c.execute("DELETE FROM links WHERE id = ?", (link_id,))
         conn.commit()
 
     conn.close()
-    return redirect(url_for('admin'))
+    return redirect(url_for("admin"))
 
 @app.route("/logout")
 def logout():
