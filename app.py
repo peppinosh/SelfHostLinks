@@ -11,7 +11,12 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+from werkzeug.security import generate_password_hash
 
+#password = input("Enter your password: ")
+#hashed = generate_password_hash(password, method="scrypt")
+#print("\nHashed password (use this in .env with $ replaced by $$):\n")
+#print(hashed.replace("$", "$$"))
 app = Flask(__name__)
 
 # Flask-Limiter setup with in-memory storage (safe for dev, not prod)
