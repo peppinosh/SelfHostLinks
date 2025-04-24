@@ -1,88 +1,59 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin MediaServer</title>
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin - {{ app_name }}</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    function confermaEliminazione() {
-      return confirm('Sei sicuro di voler eliminare questo link?');
-    }
-
-    function toggleEdit(id) {
-      const form = document.getElementById('edit-form-' + id);
-      form.classList.toggle('hidden');
+    function confirmDelete() {
+      return confirm('Are you sure you want to delete this link?');
     }
   </script>
 </head>
 <body class="bg-gray-100 flex flex-col items-center min-h-screen p-8">
-
-  <!-- Form Aggiunta Link -->
   <div class="w-full max-w-md bg-white rounded-xl shadow-md p-8">
-    <h1 class="text-3xl font-bold mb-6 text-center">Gestisci i tuoi Link</h1>
+    <h1 class="text-3xl font-bold mb-6 text-center">Manage your Links</h1>
 
     <form method="POST" enctype="multipart/form-data" class="flex flex-col space-y-4">
-      <input name="title" type="text" placeholder="Titolo" class="border p-2 rounded" required>
-      <input name="url" type="text" placeholder="URL" class="border p-2 rounded" required>
+      <input name="title" type="text" placeholder="Title" class="border p-2 rounded" required />
+      <input name="url" type="text" placeholder="URL" class="border p-2 rounded" required />
 
-      <!-- Color Picker -->
       <div class="flex items-center space-x-2">
-        <label for="color" class="text-sm font-semibold">Scegli colore:</label>
-        <input id="color" name="color" type="color" class="border p-1 rounded" required>
+        <label for="color" class="text-sm font-semibold">Choose color:</label>
+        <input id="color" name="color" type="color" class="border p-1 rounded" required />
       </div>
 
-      <!-- Upload Icona -->
       <div>
-        <label class="block text-sm mb-1">
-          <span class="font-semibold text-gray-800">Carica icona:</span> 
-          <span class="text-gray-400 italic">(opzionale, max 2MB, solo immagini png/jpg/jpeg/gif)</span>
-        </label>
-        <input name="icon_file" type="file" accept="image/png, image/jpeg, image/jpg, image/gif" class="border p-2 rounded w-full">
+        <label class="block text-sm font-bold mb-1">Upload icon <span class="text-gray-400 italic">(optional, max 2MB, PNG/JPG/JPEG/GIF)</span>:</label>
+        <input name="icon_file" type="file" accept="image/*" class="border p-2 rounded w-full" />
       </div>
 
-      <button type="submit" class="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Aggiungi Link</button>
+      <button type="submit" class="bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">
+        Add Link
+      </button>
     </form>
   </div>
 
-  <!-- Elenco Link Esistenti -->
   <div class="w-full max-w-md mt-8">
-    <h2 class="text-2xl font-bold mb-4">Link Esistenti</h2>
+    <h2 class="text-2xl font-bold mb-4">Existing Links</h2>
     <div class="flex flex-col space-y-4">
       {% for link in links %}
-        <div class="p-4 bg-white rounded-xl shadow flex flex-col relative">
-          <div class="flex justify-between items-center">
-            <div>
-              <span class="font-bold">{{ link[1] }}</span><br>
-              <a href="{{ link[2] }}" target="_blank" class="text-blue-500 hover:underline">{{ link[2] }}</a><br>
-              <span class="text-sm">Colore: <span style="color: {{ link[3] }};">{{ link[3] }}</span></span>
-            </div>
-
-            <!-- Freccetta per toggle modifica -->
-            <button type="button" onclick="toggleEdit({{ link[0] }})" class="text-gray-500 hover:text-gray-800">
-              ▼
-            </button>
+        <div class="p-4 bg-white rounded-xl shadow flex flex-col">
+          <span class="font-bold">{{ link[1] }}</span>
+          <a href="{{ link[2] }}" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">{{ link[2] }}</a>
+          <div class="text-sm mt-1">
+            Color: <span style="color: {{ link[3] }};">{{ link[3] }}</span>
           </div>
-
           {% if link[4] %}
             <div class="mt-2">
-              <img src="{{ url_for('static', filename='icons/' ~ link[4]) }}" alt="Icona" class="w-10 h-10 object-contain">
+              <img src="{{ url_for('static', filename='icons/' ~ link[4]) }}" alt="Icon" class="w-10 h-10 object-contain" />
             </div>
           {% endif %}
-
-          <!-- Modulo Modifica nascosto -->
-          <form id="edit-form-{{ link[0] }}" action="{{ url_for('edit_link', link_id=link[0]) }}" method="POST" class="mt-2 flex flex-col space-y-2 bg-gray-50 p-2 rounded hidden">
-            <input name="title" type="text" value="{{ link[1] }}" class="border p-2 rounded" required>
-            <input name="url" type="text" value="{{ link[2] }}" class="border p-2 rounded" required>
-            <input name="color" type="color" value="{{ link[3] }}" class="border p-1 rounded" required>
-            <button type="submit" class="bg-yellow-500 text-white py-1 rounded hover:bg-yellow-600 text-sm">Salva Modifica</button>
-          </form>
-
-          <!-- Bottone Elimina -->
-          <form action="{{ url_for('delete_link', link_id=link[0]) }}" method="POST" class="mt-2" onsubmit="return confermaEliminazione();">
+          <form action="{{ url_for('delete_link', link_id=link[0]) }}" method="POST" class="mt-2" onsubmit="return confirmDelete();">
             <button type="submit" class="bg-red-500 text-white py-1 px-4 rounded hover:bg-red-600 text-sm">
-              Elimina
+              Delete
             </button>
           </form>
         </div>
@@ -90,21 +61,15 @@
     </div>
   </div>
 
-  <!-- Home + Logout affiancati -->
-  <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
+  <div class="mt-8 flex items-center space-x-4">
     <a href="{{ url_for('home') }}">
-      <img src="{{ url_for('static', filename='home-button.png') }}" alt="Home" class="w-10 h-10 object-contain hover:opacity-80 transition">
+      <img src="{{ url_for('static', filename='home-button.png') }}" alt="Home" class="w-10 h-10 object-contain hover:opacity-80 transition" />
     </a>
-
-    <a href="{{ url_for('logout') }}" class="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition">
-      Logout
-    </a>
+    <a href="{{ url_for('logout') }}" class="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition">Logout</a>
   </div>
 
-  <!-- Footer -->
   <footer class="mt-8 text-center text-gray-600">
-    <p>&copy; 2025 MediaServer. Tutti i diritti riservati.</p>
+    <p>&copy; 2025 {{ app_name }}. All rights reserved.</p>
   </footer>
-
 </body>
 </html>

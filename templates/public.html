@@ -1,46 +1,34 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-  <title>MediaServer</title>
-  <!-- TailwindCSS da CDN -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ app_name }}</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gradient-to-br from-gray-100 to-gray-300 flex flex-col items-center justify-center min-h-screen p-8">
-
-  <!-- Contenitore principale -->
-  <div class="w-full max-w-md p-8 bg-white rounded-2xl shadow-lg flex flex-col items-center">
-    <h1 class="text-4xl font-bold mb-8 text-center text-gray-800">MediaServer</h1>
-    
-    <!-- Link dinamici dal database -->
-    <div class="flex flex-col space-y-4 w-full">
+<body class="bg-gradient-to-br from-gray-100 to-gray-300 flex items-center justify-center min-h-screen">
+  <div class="w-full max-w-md p-8 bg-white rounded-2xl shadow-lg">
+    <h1 class="text-4xl font-bold mb-8 text-center text-gray-800">{{ app_name }}</h1>
+    <div class="flex flex-col space-y-4">
       {% for link in links %}
-        <a href="{{ link[2] }}" target="_blank" class="w-full flex items-center justify-center space-x-3 py-3 rounded-xl hover:opacity-90 transition" style="background-color: {{ link[3] }}">
+        <a href="{{ link[2] }}" target="_blank" rel="noopener noreferrer" class="w-full flex items-center justify-center space-x-3 py-3 rounded-xl hover:opacity-90 transition" style="background-color: {{ link[3] }}">
           {% if link[4] %}
-            <img src="{{ url_for('static', filename='icons/' ~ link[4]) }}" alt="Icona" class="w-8 h-8 object-contain">
+            <img src="{{ url_for('static', filename='icons/' ~ link[4]) }}" alt="Icon" class="w-6 h-6 object-contain" />
           {% endif %}
           <span class="text-white font-semibold">{{ link[1] }}</span>
         </a>
       {% endfor %}
     </div>
-
-    <!-- Link Login o Admin -->
-    <div class="mt-6 text-center">
-      {% if "user" in session %}
-        <a href="{{ url_for('admin') }}" class="text-blue-600 hover:underline">Vai al Pannello Admin</a>
-      {% else %}
-        <a href="{{ url_for('login') }}" class="text-blue-600 hover:underline">Login Admin</a>
-      {% endif %}
-    </div>
-
+    {% if "user" in session %}
+      <div class="mt-6 text-center">
+        <a href="{{ url_for('admin') }}" class="text-blue-600 hover:underline">Go to Admin Panel</a>
+      </div>
+    {% else %}
+      <div class="mt-6 text-center">
+        <a href="{{ url_for('login') }}" class="text-blue-600 hover:underline">Admin Login</a>
+      </div>
+    {% endif %}
   </div>
-
-  <!-- Footer -->
-  <footer class="mt-8 text-center text-gray-600">
-    <p>&copy; 2025 MediaServer. Tutti i diritti riservati.</p>
-  </footer>
-
 </body>
 </html>

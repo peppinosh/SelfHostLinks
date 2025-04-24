@@ -15,6 +15,8 @@ limiter = Limiter(
     app=app,
     default_limits=["200 per day", "50 per hour"]
 )
+
+APP_NAME = os.environ.get("APP_NAME", "SelfHostLinks")
 # Prendo la SECRET_KEY dall'ambiente, con fallback per debug
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
@@ -68,7 +70,7 @@ def home():
     links = c.fetchall()
     conn.close()
 
-    return render_template("public.html", links=links)
+    return render_template("public.html", links=links, app_name=APP_NAME)
 
 @app.route("/edit/<int:link_id>", methods=["POST"])
 def edit_link(link_id):
@@ -98,9 +100,8 @@ def login():
             session["user"] = username
             return redirect(url_for("admin"))
         else:
-            return render_template("login.html", error="Credenziali non valide")
-
-    return render_template("login.html")
+             return render_template("login.html", error="Invalid credentials", app_name=APP_NAME)
+    return render_template("login.html", app_name=APP_NAME)
 
 # Estensioni consentite per upload icone
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -155,7 +156,8 @@ def admin():
     links = c.fetchall()
     conn.close()
 
-    return render_template("admin.html", links=links)
+    return render_template("admin.html", links=links, app_name=APP_NAME)
+
 @app.route("/delete/<int:link_id>", methods=["POST"])
 def delete_link(link_id):
     if "user" not in session:

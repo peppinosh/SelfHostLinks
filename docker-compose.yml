@@ -9,6 +9,7 @@ services:
       SECRET_KEY: ${SECRET_KEY}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
+      APP_NAME: ${APP_NAME}
     volumes:
       - ./database.db:/app/database.db
       - ./static:/app/static
