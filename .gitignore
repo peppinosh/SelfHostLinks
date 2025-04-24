@@ -172,3 +172,10 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# SQLite DB (se non vuoi committarlo)
+database.db
+
+# Uploads (opzionale, se hai icone caricate)
+static/icons/*
+!static/icons/.gitkeep
