@@ -16,9 +16,13 @@ This file lists planned features, improvements, and ideas for future releases.
 
 ---
 
+## ✅ Recently Completed
+- [x] Live preview when creating/editing links
+- [x] Edit links with expandable form
+- [x] Link reordering with drag & drop
+- [x] Mobile-friendly spacing improvements
+
 ## 🚧 Planned Features
-- [ ] Edit links (inline or expandable form)
-- [ ] Link reordering (drag & drop or up/down buttons)
 - [ ] Tag or category support
 - [ ] Link analytics (clicks, last access)
 - [ ] Light/Dark mode toggle

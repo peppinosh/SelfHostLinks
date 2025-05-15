@@ -1,4 +1,3 @@
-
 import os
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, session
@@ -8,6 +7,7 @@ from werkzeug.utils import secure_filename
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
+import logging
 
 # Load environment variables
 load_dotenv()
@@ -17,8 +17,11 @@ from werkzeug.security import generate_password_hash
 #hashed = generate_password_hash(password, method="scrypt")
 #print("\nHashed password (use this in .env with $ replaced by $$):\n")
 #print(hashed.replace("$", "$$"))
-app = Flask(__name__)
 
+app = Flask(__name__)
+# Ensure the "static/icons" directory exists
+if not os.path.exists("static/icons"):
+    os.makedirs("static/icons")
 # Flask-Limiter setup with in-memory storage (safe for dev, not prod)
 limiter = Limiter(
     get_remote_address,
@@ -60,7 +63,8 @@ def init_db():
                 title TEXT NOT NULL,
                 url TEXT NOT NULL,
                 color TEXT NOT NULL,
-                icon TEXT
+                icon TEXT,
+                position INTEGER NOT NULL DEFAULT 0
             )
         """)
         conn.commit()
@@ -80,7 +84,7 @@ def allowed_file(filename):
 def home():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
-    c.execute("SELECT id, title, url, color, icon FROM links")
+    c.execute("SELECT id, title, url, color, icon FROM links ORDER BY position")
     links = c.fetchall()
     conn.close()
     return render_template("public.html", links=links, app_name=APP_NAME)
@@ -108,7 +112,14 @@ def login():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-
+        # Debugging: logga i valori di username e il risultato del confronto hash
+        print(f"Submitted username: {username}")
+        print(f"Expected username: {USERNAME}")
+        print(f"Password hash check: {check_password_hash(PASSWORD_HASH, password)}")
+        print(f"Submitted password: {password}")
+        print(f"Expected password hash: {PASSWORD_HASH}")
+        #stampa l'hash della password calcolato
+        print(f"Calculated password hash: {generate_password_hash(password, method='scrypt')}")
         if username == USERNAME and check_password_hash(PASSWORD_HASH, password):
             session["user"] = username
             return redirect(url_for("admin"))
@@ -129,6 +140,11 @@ def admin():
         url_link = request.form["url"]
         color = request.form["color"]
 
+        # Get max position
+        c.execute("SELECT MAX(position) FROM links")
+        max_position = c.fetchone()[0] or 0
+        next_position = max_position + 1
+
         icon_filename = None
         if "icon_file" in request.files:
             icon_file = request.files["icon_file"]
@@ -148,13 +164,30 @@ def admin():
                 else:
                     return "Invalid file type. Only images are allowed.", 400
 
-        c.execute("INSERT INTO links (title, url, color, icon) VALUES (?, ?, ?, ?)", (title, url_link, color, icon_filename))
+        c.execute("INSERT INTO links (title, url, color, icon, position) VALUES (?, ?, ?, ?, ?)", 
+                 (title, url_link, color, icon_filename, next_position))
         conn.commit()
 
-    c.execute("SELECT id, title, url, color, icon FROM links")
+    c.execute("SELECT id, title, url, color, icon FROM links ORDER BY position")
     links = c.fetchall()
     conn.close()
     return render_template("admin.html", links=links, app_name=APP_NAME)
+
+@app.route("/update_order", methods=["POST"])
+def update_order():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    new_order = request.json
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+    
+    for position, link_id in enumerate(new_order):
+        c.execute("UPDATE links SET position = ? WHERE id = ?", (position, link_id))
+    
+    conn.commit()
+    conn.close()
+    return {"status": "success"}
 
 @app.route("/delete/<int:link_id>", methods=["POST"])
 def delete_link(link_id):

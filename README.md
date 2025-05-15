@@ -16,11 +16,15 @@ Easily create and manage your own list of links with a clean interface.
 - Responsive UI powered by TailwindCSS
 - Admin panel with login (one user only)
 - Custom link title, URL, color, and icon upload
+- Live preview when creating or editing links
+- Drag and drop reordering of links
+- Edit existing links (title, URL, color)
 - SQLite database (lightweight and portable)
 - Persistent configuration using `.env` file
 - Docker-ready deployment with `deploy.sh`
 - Rate limiting on login with Flask-Limiter
 - Passwords hashed using `scrypt` (via Werkzeug)
+- Mobile-friendly interface with proper spacing
 
 ---
 
@@ -41,6 +45,18 @@ chmod +x deploy.sh
 ```
 
 Then go to `http://localhost` (or your server IP) to access your site.
+
+---
+
+## 🔄 Updating from Previous Version
+
+If you have a database from a previous version, you can update it to support the new features using the included `update_db.py` script:
+
+```bash
+python update_db.py
+```
+
+This will add any missing columns to your existing database while preserving all your links and settings.
 
 ---
 
